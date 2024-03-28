@@ -1,0 +1,17 @@
+---
+title: "DL_ye"
+author: "Ye"
+date: "2024-03-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ISLR2)
+library(glmnet)
+library(keras)
+library(reticulate)
+library(mnist)
+```
+
+
