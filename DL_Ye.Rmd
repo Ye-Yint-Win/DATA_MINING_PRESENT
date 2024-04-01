@@ -1,31 +1,84 @@
----
-title: "DL_ye"
-author: "Ye"
-date: "2024-03-26"
-output: html_document
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(ISLR2)
 library(MASS)
 library(caret)
-library(glmnet)
-library(keras)
-library(reticulate)
-library(mnist)
 library(dslabs)
+library(mnist)
 library(tidyverse)
+library(keras)
+library(glmnet)
 ```
+
+
 
 ```{r}
 data(brca)
 predictors = data.frame(brca$x)
 brca_data = data.frame(x = predictors, 
-                       y = fct_relevel(brca$y, c("M","B")))
+                       y = fct_relevel(brca$y, c("M","B"))) # re level y to make M the first/positive class
 set.seed(42)
-test_index <- createDataPartition(brca_data$y, p = 0.25, list = FALSE)
-test_brca <- brca_data[test_index,]
-train_brca <- brca_data[-test_index,]
+# test_index <- createDataPartition(brca_data$y, p = 0.25, list = FALSE)
+# test_brca <- brca_data[test_index,]
+# train_brca <- brca_data[-test_index,]
+# 
+
+n<- nrow(brca_data)
+
+ntest<- trunc(n/3)
+testid<- sample(1:n, ntest)
+
+```
+
+```{r}
+mod.fit<- lm(x.radius_mean ~., data = brca_data[-testid , ])
+mod.fit
+```
+```{r}
+mod.pred <- predict(mod.fit,  brca_data[testid , ])
+
+with(brca_data[testid , ], mean(abs(mod.pred- x.radius_mean)))
+```
+
+```{r}
+x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))
+y <- brca_data$x.radius_mean
+
+cvfit<- cv.glmnet(x[-testid, ], y[-testid], type.measure = "mae")
+cvpred<- predict(cvfit, x[testid, ], s = "lambda.min")
+mean(abs(y[testid]- cvpred))
+
+```
+
+```{r}
+modnn <- keras_model_sequential() %>%
+ layer_dense(units = 50, activation = "relu",
+input_shape = ncol(x)) %>%
+ layer_dropout(rate = 0.4) %>%
+ layer_dense(units = 1)
+
+x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))
+x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))%>% scale()
+
+
+modnn %>% compile(loss = "mse",
+                  optimizer = optimizer_rmsprop(),
+                  metrics = list("mean_absolute_error")
+                  )
+```
+
+```{r}
+history <- modnn %>% fit(
+  x[-testid , ], y[-testid], epochs = 20, batch_size = 32,
+  validation_data = list(x[testid , ], y[testid])
+            )
+```
+```{r}
+plot(history)
+```
+
+```{r}
+npred <- predict(modnn , x[testid , ])
+mean(abs(y[testid] - npred))
 ```
