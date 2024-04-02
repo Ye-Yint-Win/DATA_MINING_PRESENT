@@ -1,14 +1,33 @@
+---
+title: "DL_ye"
+author: "Ye"
+date: "2024-03-26"
+output: html_document
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(ggplot2)
+
+# Linear Regression and Data Manipulation
 library(ISLR2)
 library(MASS)
 library(caret)
 library(dslabs)
-library(mnist)
-library(tidyverse)
+library(mlbench)
+
+
+# Neural Network Modeling
 library(keras)
+library(tensorflow)
+library(reticulate)
+
+# Image Classification with MNIST
+library(mnist)
+library(ggplot2)
+library(tidyverse)
 library(glmnet)
+
+
 ```
 
 
@@ -17,18 +36,14 @@ library(glmnet)
 data(brca)
 predictors = data.frame(brca$x)
 brca_data = data.frame(x = predictors, 
-                       y = fct_relevel(brca$y, c("M","B"))) # re level y to make M the first/positive class
+                       y = fct_relevel(brca$y, c("M","B"))) 
 set.seed(42)
-# test_index <- createDataPartition(brca_data$y, p = 0.25, list = FALSE)
-# test_brca <- brca_data[test_index,]
-# train_brca <- brca_data[-test_index,]
-# 
+
 
 n<- nrow(brca_data)
 
 ntest<- trunc(n/3)
 testid<- sample(1:n, ntest)
-
 ```
 
 ```{r}
@@ -51,6 +66,7 @@ mean(abs(y[testid]- cvpred))
 
 ```
 
+
 ```{r}
 modnn <- keras_model_sequential() %>%
  layer_dense(units = 50, activation = "relu",
@@ -67,6 +83,8 @@ modnn %>% compile(loss = "mse",
                   metrics = list("mean_absolute_error")
                   )
 ```
+$$g(z) = $$
+
 
 ```{r}
 history <- modnn %>% fit(
@@ -82,3 +100,239 @@ plot(history)
 npred <- predict(modnn , x[testid , ])
 mean(abs(y[testid] - npred))
 ```
+
+
+
+```{r}
+Gitters <- na.omit(Hitters)
+n <- nrow(Gitters)
+set.seed(13)
+ntest <- trunc(n / 3)
+testid <- sample(1:n, ntest)
+
+lfit <- lm(Salary ~ ., data = Gitters[-testid , ])
+lpred <- predict(lfit, Gitters[testid , ])
+with(Gitters[testid , ], mean(abs(lpred - Salary)))
+
+x <- scale(model.matrix(Salary ~ . - 1, data = Gitters))
+y <- Gitters$Salary
+
+library(glmnet)
+cvfit <- cv.glmnet(x[-testid , ], y[-testid],
+type.measure = "mae")
+cpred <- predict(cvfit , x[testid , ], s = "lambda.min")
+mean(abs(y[testid] - cpred))
+
+
+library(keras)
+modnn <- keras_model_sequential() %>%
+layer_dense(units = 50, activation = "relu",
+input_shape = ncol(x)) %>%
+layer_dropout(rate = 0.4) %>%
+layer_dense(units = 1)
+
+
+x <- scale(model.matrix(Salary ~ . - 1, data = Gitters))
+x <- model.matrix(Salary ~ . - 1, data = Gitters) %>% scale()
+
+
+modnn %>% compile(loss = "mse",
+optimizer = optimizer_rmsprop(),
+metrics = list("mean_absolute_error")
+)
+
+history <- modnn %>% fit(
+x[-testid , ], y[-testid], epochs = 20, batch_size = 32,
+validation_data = list(x[testid , ], y[testid])
+)
+
+plot(history)
+
+npred <- predict(modnn , x[testid , ])
+mean(abs(y[testid] - npred))
+```
+
+
+```{r}
+mnist_file <- "/Users/yeyintwin/Downloads/mnist.npz"
+
+# Load the MNIST dataset from the local file
+mnist <- keras::dataset_mnist(path = mnist_file)
+train_images <- mnist$train$x
+train_labels <- mnist$train$y
+test_images <- mnist$test$x
+test_labels <- mnist$test$y
+
+dim(train_images)
+dim(test_images)
+
+train_images <- array_reshape(train_images, c(nrow(train_images), 784))
+test_images <- array_reshape(test_images, c(nrow(test_images), 784))
+train_labels <- to_categorical(train_labels, 10)
+test_labels <- to_categorical(test_labels, 10)
+
+train_images <- train_images / 255
+test_images <- test_images / 255
+
+modelnn <- keras_model_sequential()
+modelnn %>%
+  layer_dense(units = 256, activation = "relu",
+              input_shape = c(784)) %>%
+  layer_dropout(rate = 0.4) %>%
+  layer_dense(units = 128, activation = "relu") %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 10, activation = "softmax")
+summary(modelnn)
+
+modelnn %>% compile(loss = "categorical_crossentropy",
+                    optimizer = optimizer_rmsprop(), 
+                    metrics = c("accuracy")
+)
+
+system.time(
+  history <- modelnn %>%
+    fit(train_images, train_labels, epochs = 20, batch_size = 128,
+        validation_split = 0.2)
+)
+plot(history, smooth = FALSE)
+
+accuracy <- function(pred, truth) {
+  mean(drop(as.numeric(pred)) == drop(truth))
+}
+modelnn %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
+
+modellr <- keras_model_sequential() %>%
+  layer_dense(input_shape = 784, units = 10,
+              activation = "softmax")
+summary(modellr)
+
+
+#Generalization criterion for two-class logistic regression
+modellr %>% compile(loss = "categorical_crossentropy",
+                    optimizer = optimizer_rmsprop(), 
+                    metrics = c("accuracy"))
+modellr %>% fit(train_images, train_labels, epochs = 20,
+                batch_size = 128, validation_split = 0.2)
+
+modellr %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
+
+```
+
+
+<!-- ```{r} -->
+<!-- # Load Breast Cancer Wisconsin (Diagnostic) dataset -->
+<!-- data("BreastCancer", package = "mlbench") -->
+
+<!-- # Convert the dataset to a data frame -->
+<!-- breast_cancer_df <- as.data.frame(BreastCancer) -->
+
+<!-- # Preprocess the data -->
+<!-- x <- as.matrix(breast_cancer_df[, -1])  # Exclude the first column (ID) -->
+<!-- x <- as.data.frame(x)  # Convert x to a data frame -->
+<!-- x <- lapply(x, as.numeric)  # Convert all columns to numeric -->
+<!-- x <- do.call(cbind, x)  # Combine columns into a matrix -->
+<!-- y <- ifelse(breast_cancer_df$Class == "benign", 0, 1)  # Convert labels to 0 (benign) and 1 (malignant) -->
+<!-- y <- to_categorical(y, 2)  # One-hot encode labels for binary classification -->
+
+<!-- # Standardize features -->
+<!-- x <- scale(x) -->
+
+<!-- # Split data into training and testing sets -->
+<!-- set.seed(123) -->
+<!-- indices <- sample(1:nrow(x), nrow(x) * 0.8)  # 80% for training, 20% for testing -->
+<!-- x_train <- x[indices, ] -->
+<!-- y_train <- y[indices, ] -->
+<!-- x_test <- x[-indices, ] -->
+<!-- y_test <- y[-indices, ] -->
+
+<!-- # Define the neural network model -->
+<!-- model <- keras_model_sequential() %>% -->
+<!--   layer_dense(units = 256, activation = "relu", input_shape = ncol(x_train)) %>% -->
+<!--   layer_dropout(rate = 0.4) %>% -->
+<!--   layer_dense(units = 128, activation = "relu") %>% -->
+<!--   layer_dropout(rate = 0.3) %>% -->
+<!--   layer_dense(units = 2, activation = "softmax") -->
+
+<!-- # Compile the model -->
+<!-- model %>% compile( -->
+<!--   loss = "categorical_crossentropy", -->
+<!--   optimizer = optimizer_rmsprop(), -->
+<!--   metrics = c("accuracy") -->
+<!-- ) -->
+
+<!-- # Train the model -->
+<!-- history <- model %>% fit( -->
+<!--   x_train, y_train, epochs = 30, batch_size = 128, -->
+<!--   validation_split = 0.2 -->
+<!-- ) -->
+
+<!-- # Plot training history -->
+<!-- plot(history, smooth = FALSE) -->
+
+<!-- # Evaluate model on test data -->
+<!-- accuracy <- function(pred, truth) { -->
+<!--   pred_class <- max.col(pred) - 1  # Convert one-hot encoded predictions to class labels -->
+<!--   truth_class <- max.col(truth) - 1  # Convert one-hot encoded truth to class labels -->
+<!--   mean(pred_class == truth_class) -->
+<!-- } -->
+
+<!-- model %>% evaluate(x_test, y_test) -->
+
+<!-- ``` -->
+
+```{r}
+# Load necessary libraries
+library(data.table)
+library(ggplot2)
+library(keras)
+
+# Load datasets
+train <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/train.csv")
+test <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/test.csv")
+
+# Reshape datasets
+train_images <- array_reshape(as.matrix(train[, c("R1C1", "R1C2", "R2C1", "R2C2")]), c(nrow(train), 4))
+test_images <- array_reshape(as.matrix(test[, c("R1C1", "R1C2", "R2C1", "R2C2")]), c(nrow(test), 4))
+dim(train_images)
+dim(test_images)
+# Preprocess datasets
+train_images <- train_images / 255
+test_images <- test_images / 255
+
+# Define neural network architecture
+model <- keras_model_sequential() %>%
+  layer_dense(units = 256, activation = "sigmoid", input_shape = c(4)) %>%
+  layer_dropout(rate = 0.4) %>%
+  layer_dense(units = 128, activation = "sigmoid") %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 10, activation = "softmax")
+
+# Compile the model
+model %>% compile(
+  loss = "categorical_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy")
+)
+
+model
+
+
+# Train the model
+history <- model %>% fit(
+  train_images, train_labels, 
+  epochs = 20, batch_size = 128,
+  validation_split = 0.2
+)
+
+# Plot training history
+plot(history, smooth = FALSE)
+
+# Evaluate model on test data
+accuracy <- function(pred, truth) {
+  mean(drop(as.numeric(pred)) == drop(truth))
+}
+test_accuracy <- model %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
+test_accuracy
+
+```
+
