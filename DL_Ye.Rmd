@@ -8,12 +8,13 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# Linear Regression and Data Manipulation
+# Data
 library(ISLR2)
 library(MASS)
 library(caret)
 library(dslabs)
 library(mlbench)
+library(data.table)
 
 
 # Neural Network Modeling
@@ -26,6 +27,7 @@ library(mnist)
 library(ggplot2)
 library(tidyverse)
 library(glmnet)
+
 
 
 ```
@@ -124,7 +126,6 @@ cpred <- predict(cvfit , x[testid , ], s = "lambda.min")
 mean(abs(y[testid] - cpred))
 
 
-library(keras)
 modnn <- keras_model_sequential() %>%
 layer_dense(units = 50, activation = "relu",
 input_shape = ncol(x)) %>%
@@ -281,11 +282,6 @@ modellr %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
 <!-- ``` -->
 
 ```{r}
-# Load necessary libraries
-library(data.table)
-library(ggplot2)
-library(keras)
-
 # Load datasets
 train <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/train.csv")
 test <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/test.csv")
