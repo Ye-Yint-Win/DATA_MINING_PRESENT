@@ -48,7 +48,15 @@ Your neurons...
 ## That is the idea behind Neural Networks
 
 Neural Nets- AI Learning modeled inspired by the structure and functions
-of a brain with its working Neurons.x
+of a brain with its working Neurons.
+1)It consists of interconnected nodes organized into layers, including an input layer, one or more hidden layers, and an output layer
+2)learn to recognize patterns and relationships in data, adjusting their internal parameters (weights and biases) to minimize the difference between predicted and actual outputs
+3)based on the patterns learned during training, making them powerful tools for tasks such as image recognition, natural language processing, and predictive analytics
+
+Each neuron receives input signals from the the previous layer, applies a transformation to these inputs using 
+weights and biases
+
+forwardfeeding : the propagation of input data through the network, layer by layer
 
 ***Example of forwardfeeding***
 
@@ -56,12 +64,33 @@ $$f(x)= \beta_0 + \sum_{k=1}^{K}\beta_kh_k(X)$$
 
 $$f(x)= \beta_0 + \sum_{k=1}^{K}\beta_kg(w_{k0} + \sum_{j=1}^{p} w_{kj} X_j$$
 
+The equation you provided appears to be a linear regression model,
+where:-
+
+$$f(x) $$ represents the predicted outcome.
+
+$$\beta_0$$ is the intercept term
+
+$$\beta_k$$ are the coefficients associated with each predictor variable
+
+$$g()$$ represents some function applied to its argument.
+
+$$w_{k0}$$ and $$w_{kj}$$ are weights associated with each predictor
+variable.
+
+$$X_j$$ are the predictor variables.
+
+$$K$$ is the total number of predictor variables.
+
+$$p$$ is the total number of predictors.In this model, each predictor
+variable
+
 Activations within the equation begin to model relationships within the
 data...
 
-\-
-
-\-
+-the activations, often denoted by the function $g()$, introduce
+non-linearities that allow the model to capture complex relationships
+between the predictor variables and the outcome.
 
 $$A_k = h_k(X) $$
 
@@ -94,15 +123,20 @@ weight put with it, or as we know ...Experiences
 
 ## logistic function -Used for binary classifications tasks -Maps the input value to a range between 0 and 1
 
-## [ReLU]{.underline}
+## [ReLU]{.underline} - Another Activation Function
 
-\- Rectified Linear Unit -One of the ACtivations models that could be
+\- Rectified Linear Unit -One of the Activations models that could be
 used...
+-introduces non-linearity by outputting zero for negative input values and leaving positive values unchanged, promoting faster training
 
 ------------------------------------------------------------------------
 
-CNN - Convolutional Neural Network -Images -Identify Patterns
+CNN - Convolutional Neural Network 
+Are a class of deep learning models designed specifically for processing structured grid data, such as images
 
-RNN -Recurrent Neural Network=
+1)Cars
+a)analyze camera feeds in real-time and identify various objects on the road, such as pedestrians, vehicles, and traffic signs. 
 
+2)Security
+a)analyze live video streams from surveillance cameras and detect anomalies or suspicious activities in real-time
 ------------------------------------------------------------------------
