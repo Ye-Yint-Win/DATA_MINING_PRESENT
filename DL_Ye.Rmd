@@ -30,9 +30,11 @@ library(ggplot2)
 library(tidyverse)
 library(glmnet)
 ```
+ Neural networks are computational models composed of interconnected nodes, mimicking the structure and function of biological neurons. They process input data through layers of neurons, learning from examples to make predictions or decisions.
+
+Neural networks can perform a wide range of tasks, including classification, regression, pattern recognition, and decision-making. They learn from labeled examples or unlabeled data to identify patterns and relationships in the data.
 
 Let's start by preparing the data by splitting with testid
-
 ```{r}
 # Remove rows with missing values from the dataset
 Gitters <- na.omit(Hitters)
@@ -53,7 +55,7 @@ lfit <- lm(Salary ~ ., data = Gitters[-testid , ])
 #Prediction
 lpred <- predict(lfit, Gitters[testid , ])
 
-#MEan Absolute Prediction error between train and test data.
+#Mean Absolute Prediction error between train and test data.
 with(Gitters[testid , ], mean(abs(lpred - Salary)))
 ```
 
