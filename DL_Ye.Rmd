@@ -311,13 +311,17 @@ mean(abs(y[testid] - npred))
 
 
 Multi-Layer Neural Network Homework
+
+We have a collection of 2x2 grayscale images. We’ve identified each image as having a “stairs” like pattern or not.
+Our goal is to build and train a neural network that can identify whether a new 2x2 image has the stairs pattern.
+Our training dataset consists of grayscale images. Each image is 2 pixels wide by 2 pixels tall, each pixel representing an intensity between 0 (white) and 255 (black). If we label each pixel intensity as $ p1 $, $ p2 $, $ p3 $, $ p4 $, we can represent each image as a numeric vector which we can feed into our neural network.
+
 ```{r}
 # Load datasets
+
 train <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/train.csv")
 test <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/test.csv")
 ```
-
-
 Using the train and test sets above can you begin reshaping the data so that we can begin defining the neural network?
 Now, the next step is to preprocess the datasets.
 
