@@ -1,0 +1,108 @@
+---
+title: "Class Time 04/04/2024"
+author: "Pedro Ochoa"
+date: "2024-04-02"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+
+```
+
+# Neural Net....
+
+---------------------------------------------------------------------------------------------------------------
+
+## When we say Neural Net... what comes to mind...?
+
+Before we begin explaining what Neural nets are...
+
+![](images/Exampleu.jpg)
+
+Typoglycemia : The phenomenon it describes, known as typoglycemia, is
+the ability to understand words when the first and last letters are
+stable, but the intermediate letters are scrambled.
+
+Our brain naturally finds pattern in everyday
+life...![](images/Example2.avif)
+
+Now lets everyone's own experience...take charge...
+
+![](images/duck-rabbit.avif)
+
+What do you see..?
+
+Our brains are naturally looking for patterns...
+
+What determines what you see... depends on you...
+
+Your experiences ..
+
+Your neurons...
+
+---------------------------------------------------------------------------------------------------------------
+
+## That is the idea behind Neural Networks
+
+Neural Nets- AI Learning modeled inspired by the structure and functions
+of a brain with its working Neurons.x
+
+***Example of forwardfeeding***
+
+$$f(x)= \beta_0 + \sum_{k=1}^{K}\beta_kh_k(X)$$
+
+$$f(x)= \beta_0 + \sum_{k=1}^{K}\beta_kg(w_{k0} + \sum_{j=1}^{p} w_{kj} X_j$$
+
+Activations within the equation begin to model relationships within the
+data...
+
+\-
+
+\-
+
+$$A_k = h_k(X) $$
+
+$$A_k = h_k(X) = g(w_{k0} + \sum_{j=1}^{p}w_{kj}X_j$$
+
+$$h_k(X)=g(z) $$
+
+$$f(x)= \beta_0 + \sum_{k=1}^{K}\beta_kA_k$$
+
+*feedfowarding*
+
+Weights put on each neruon changes the combination of the output.
+
+---------------------------------------------------------------------------------------------------------------
+
+# [**Single Neural Net:**]{.underline}
+
+![](images/Single_Map.png)
+
+## [**Activations**]{.underline} 
+
+## Introduces nonlinear , allowing networks to model relationships in data...
+
+-Determines whether to activate neuron...
+
+-Influence output signal that is "propagated forward"... based off its
+weight put with it, or as we know ...Experiences
+
+## [Sigmoid]{.underline} 
+
+## logistic function -Used for binary classifications tasks -Maps the input value to a range between 0 and 1
+
+## [ReLU]{.underline}
+
+\- Rectified Linear Unit -One of the ACtivations models that could be
+used...
+
+------------------------------------------------------------------------
+
+CNN - Convolutional Neural Network -Images -Identify Patterns
+
+RNN -Recurrent Neural Network=
+
+------------------------------------------------------------------------
