@@ -11,20 +11,16 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# Linear Regression and Data Manipulation
+
 library(ISLR2)
 library(MASS)
 library(caret)
 library(dslabs)
 library(mlbench)
 library(data.table)
-
-# Neural Network Modeling
 library(keras)
 library(tensorflow)
 library(reticulate)
-
-# Image Classification with MNIST
 library(mnist)
 library(ggplot2)
 library(tidyverse)
@@ -363,19 +359,16 @@ dim(test_images)
 train_images <- train_images / 255
 test_images <- test_images / 255
 ```
-
-Question 2
-Define the multi-layer neural network with activation layers of your choice.
+6. Define the multi-layer neural network with activation layers of your choice.
 ```{r}
 
 ```
 
-Question 3
-It is important to complie the neural network before training it to get the optimal configuration that will help us train the model. Compile and then train the data set. Evaluate the model on the test data. Explain what you notice.
+7. It is important to complie the neural network before training it to get the optimal configuration that will help us train the model. Compile and then train the data set. Evaluate the model on the test data. Explain what you notice.
 ```{r}
 
 ```
-Plot the model
+8. Plot the model
 ```{r}
 
 ```
