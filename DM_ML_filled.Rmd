@@ -368,23 +368,32 @@ npred <- predict(modnn , x[testid , ])
 mean(abs(y[testid] - npred))
 ```
 
+Multi-Layer Neural Network Homework
 
+We have a collection of 2x2 grayscale images. We’ve identified each image as having a “stairs” like pattern or not.
+Our goal is to build and train a neural network that can identify whether a new 2x2 image has the stairs pattern.
+Our training dataset consists of grayscale images. Each image is 2 pixels wide by 2 pixels tall, each pixel representing an intensity between 0 (white) and 255 (black). If we label each pixel intensity as $ p1 $, $ p2 $, $ p3 $, $ p4 $, we can represent each image as a numeric vector which we can feed into our neural network.
 
 ```{r}
 # Load datasets
+
 train <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/train.csv")
 test <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/test.csv")
+```
+Using the train and test sets above can you begin reshaping the data so that we can begin defining the neural network?
+Now, the next step is to preprocess the datasets.
 
-# Reshape datasets
+```{r}
 train_images <- array_reshape(as.matrix(train[, c("R1C1", "R1C2", "R2C1", "R2C2")]), c(nrow(train), 4))
 test_images <- array_reshape(as.matrix(test[, c("R1C1", "R1C2", "R2C1", "R2C2")]), c(nrow(test), 4))
 dim(train_images)
 dim(test_images)
-# Preprocess datasets
 train_images <- train_images / 255
 test_images <- test_images / 255
 ```
 
+6. 
+Define the multi-layer neural network with activation layers of your choice.
 ```{r}
 # Define neural network architecture
 model <- keras_model_sequential() %>%
@@ -393,6 +402,11 @@ model <- keras_model_sequential() %>%
   layer_dense(units = 128, activation = "sigmoid") %>%
   layer_dropout(rate = 0.3) %>%
   layer_dense(units = 10, activation = "softmax")
+```
+
+7. 
+It is important to complie the neural network before training it to get the optimal configuration that will help us train the model. Compile and then train the data set. Evaluate the model on the test data. Explain what you notice.
+```{r}
 
 # Compile the model
 model %>% compile(
@@ -416,7 +430,7 @@ accuracy <- function(pred, truth) {
 test_accuracy <- model %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
 test_accuracy
 ```
-
+8. Plot the model
 ```{r}
 # Plot training history
 plot(history, smooth = TRUE)
