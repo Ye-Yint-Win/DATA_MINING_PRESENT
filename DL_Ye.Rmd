@@ -3,19 +3,21 @@ title: "DL_ye"
 author: "Ye"
 date: "2024-03-26"
 output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# Data
+# Linear Regression and Data Manipulation
 library(ISLR2)
 library(MASS)
 library(caret)
 library(dslabs)
 library(mlbench)
 library(data.table)
-
 
 # Neural Network Modeling
 library(keras)
@@ -27,135 +29,146 @@ library(mnist)
 library(ggplot2)
 library(tidyverse)
 library(glmnet)
-
-
-
 ```
 
-
-
-```{r}
-data(brca)
-predictors = data.frame(brca$x)
-brca_data = data.frame(x = predictors, 
-                       y = fct_relevel(brca$y, c("M","B"))) 
-set.seed(42)
-
-
-n<- nrow(brca_data)
-
-ntest<- trunc(n/3)
-testid<- sample(1:n, ntest)
-```
+Let's start by preparing the data by splitting with testid
 
 ```{r}
-mod.fit<- lm(x.radius_mean ~., data = brca_data[-testid , ])
-mod.fit
-```
-```{r}
-mod.pred <- predict(mod.fit,  brca_data[testid , ])
-
-with(brca_data[testid , ], mean(abs(mod.pred- x.radius_mean)))
-```
-
-```{r}
-x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))
-y <- brca_data$x.radius_mean
-
-cvfit<- cv.glmnet(x[-testid, ], y[-testid], type.measure = "mae")
-cvpred<- predict(cvfit, x[testid, ], s = "lambda.min")
-mean(abs(y[testid]- cvpred))
-
-```
-
-
-```{r}
-modnn <- keras_model_sequential() %>%
- layer_dense(units = 50, activation = "relu",
-input_shape = ncol(x)) %>%
- layer_dropout(rate = 0.4) %>%
- layer_dense(units = 1)
-
-x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))
-x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))%>% scale()
-
-
-modnn %>% compile(loss = "mse",
-                  optimizer = optimizer_rmsprop(),
-                  metrics = list("mean_absolute_error")
-                  )
-```
-$$g(z) = $$
-
-
-```{r}
-history <- modnn %>% fit(
-  x[-testid , ], y[-testid], epochs = 20, batch_size = 32,
-  validation_data = list(x[testid , ], y[testid])
-            )
-```
-```{r}
-plot(history)
-```
-
-```{r}
-npred <- predict(modnn , x[testid , ])
-mean(abs(y[testid] - npred))
-```
-
-
-
-```{r}
+# Remove rows with missing values from the dataset
 Gitters <- na.omit(Hitters)
+
 n <- nrow(Gitters)
 set.seed(13)
-ntest <- trunc(n / 3)
+ntest <- n/3
+
+# Randomly sample row indices to create the test dataset
 testid <- sample(1:n, ntest)
+```
 
+Fitting the model into a linear model
+
+```{r}
 lfit <- lm(Salary ~ ., data = Gitters[-testid , ])
-lpred <- predict(lfit, Gitters[testid , ])
-with(Gitters[testid , ], mean(abs(lpred - Salary)))
 
+#Prediction
+lpred <- predict(lfit, Gitters[testid , ])
+
+#MEan Absolute Prediction error between train and test data.
+with(Gitters[testid , ], mean(abs(lpred - Salary)))
+```
+
+Scaling the Response Varaible and create the response variable This
+function scale() automatically converts factors to dummy variables. The
+scale() function standardizes the matrix so each column has mean zero
+and variance one.
+
+Cross-validated lasso regression model using cv.glmnet Getting MAE from
+lasso regression model
+
+```{r}
+#Scaling the predictors 
 x <- scale(model.matrix(Salary ~ . - 1, data = Gitters))
 y <- Gitters$Salary
 
-library(glmnet)
-cvfit <- cv.glmnet(x[-testid , ], y[-testid],
-type.measure = "mae")
-cpred <- predict(cvfit , x[testid , ], s = "lambda.min")
+#Fitting into Lasso regression
+cvfit <- cv.glmnet(x[-testid , ], y[-testid],type.measure = "mae")
+
+#Prediction
+cpred <- predict(cvfit , x[testid , ])
+
+#MAE
 mean(abs(y[testid] - cpred))
-
-
-modnn <- keras_model_sequential() %>%
-layer_dense(units = 50, activation = "relu",
-input_shape = ncol(x)) %>%
-layer_dropout(rate = 0.4) %>%
-layer_dense(units = 1)
-
-
-x <- scale(model.matrix(Salary ~ . - 1, data = Gitters))
-x <- model.matrix(Salary ~ . - 1, data = Gitters) %>% scale()
-
-
-modnn %>% compile(loss = "mse",
-optimizer = optimizer_rmsprop(),
-metrics = list("mean_absolute_error")
-)
-
-history <- modnn %>% fit(
-x[-testid , ], y[-testid], epochs = 20, batch_size = 32,
-validation_data = list(x[testid , ], y[testid])
-)
-
-plot(history)
-
-npred <- predict(modnn , x[testid , ])
-mean(abs(y[testid] - npred))
 ```
 
+## Single Layer Neural Network
+
+ReLU model(Rectified Linear Model) $$
+f(x) = \begin{cases} 
+0 & \text{if } x \leq 0 \\
+x & \text{if } x > 0 
+\end{cases}
+$$
+
+To fit the neural network, we have to set up a model structure that
+describe the network.
+
+We now return to our neural network. The object modnn has a single
+hidden layer with 50 hidden units, and a ReLU activation function. It
+then has a dropout layer, in which a random 40% of the 50 activations
+from the previous layer are set to zero during each iteration of the
+stochastic gradient descent algorithm. Finally, the output layer has
+just one unit with no activation function, indicating that the model
+provides a single quantitative output
+
+keras_model_sequential(): This function initializes an empty sequential
+model, which is a linear stack of layers. layer_dense: This function
+adds a fully connected (dense) layer to the neural network.
+
+layer_dropout : This function adds a dropout layer to the neural
+network. Dropout is a regularization technique used to prevent
+overfitting by randomly setting a fraction of input units to zero during
+training. 
+layer_dense: output layer for linear regression. It connects
+the layer with a single neuron, which is typical for linear regression.
 
 ```{r}
-mnist_file <- "/Users/yeyintwin/Downloads/mnist.npz"
+modnn <- keras_model_sequential() %>%
+  layer_dense(units = 50, activation = "sigmoid",input_shape = ncol(x)) %>%
+  layer_dropout(rate = 0.4) %>%
+  layer_dense(units = 1)
+
+
+x <- model.matrix(Salary ~ . - 1, data = Gitters) %>% scale()
+modnn
+```
+
+Compile(): this sets up the neural network model to use MSE as loss
+funciton, RMSprop as optimizer annd MSE as metric for performance.
+
+Optimizer is an optimization algorithm that adjust the learning rate for
+each parameter based on the average fo recent gradients.
+
+Then, we fit the model into a plot.
+
+Epochs: the number of epochs or iterations over the entire dataset
+during the training. 
+batch_size: the algorithm randomly select this
+amount of training observations for the computation of the gradient(how
+much we need to adjust).
+
+```{r}
+modnn %>% compile(
+  loss = "mse",
+  optimizer = optimizer_rmsprop(),
+  metrics = list("mean_absolute_error")
+)
+
+history <- modnn %>% 
+  fit(
+    x[-testid , ], y[-testid], epochs = 400, batch_size = 32, validation_data = list(x[testid , ], y[testid])
+    )
+```
+
+Now, we predict the values based on the model and get the MAE of the
+model. Then, We plot.
+
+```{r}
+npred <- predict(modnn , x[testid , ])
+mean(abs(y[testid] - npred))
+
+plot(history)
+```
+
+## Multi-Layer Neural Networks
+
+We'll use MNIST dataset provided in the textbook.
+
+This dataset is 60,000 images in the training data and 10,000 in the
+test data. The images are 28×28, and stored as a three-dimensional
+array, so we need to reshape them into a matrix.
+
+```{r}
+mnist_file <- "/Users/yeyintwin/Desktop/DM_assign/mnist.npz"
 
 # Load the MNIST dataset from the local file
 mnist <- keras::dataset_mnist(path = mnist_file)
@@ -185,9 +198,10 @@ modelnn %>%
   layer_dense(units = 10, activation = "softmax")
 summary(modelnn)
 
-modelnn %>% compile(loss = "categorical_crossentropy",
-                    optimizer = optimizer_rmsprop(), 
-                    metrics = c("accuracy")
+modelnn %>% compile(
+  loss = "categorical_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy")
 )
 
 system.time(
@@ -195,11 +209,12 @@ system.time(
     fit(train_images, train_labels, epochs = 20, batch_size = 128,
         validation_split = 0.2)
 )
-plot(history, smooth = FALSE)
+
 
 accuracy <- function(pred, truth) {
   mean(drop(as.numeric(pred)) == drop(truth))
 }
+
 modelnn %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
 
 modellr <- keras_model_sequential() %>%
@@ -219,67 +234,80 @@ modellr %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
 
 ```
 
+```{r}
+plot(history, smooth = TRUE)
+```
 
-<!-- ```{r} -->
-<!-- # Load Breast Cancer Wisconsin (Diagnostic) dataset -->
-<!-- data("BreastCancer", package = "mlbench") -->
 
-<!-- # Convert the dataset to a data frame -->
-<!-- breast_cancer_df <- as.data.frame(BreastCancer) -->
+```{r}
+data(brca)
+predictors = data.frame(brca$x)
+brca_data = data.frame(x = predictors, 
+                       y = fct_relevel(brca$y, c("M","B"))) 
+set.seed(42)
 
-<!-- # Preprocess the data -->
-<!-- x <- as.matrix(breast_cancer_df[, -1])  # Exclude the first column (ID) -->
-<!-- x <- as.data.frame(x)  # Convert x to a data frame -->
-<!-- x <- lapply(x, as.numeric)  # Convert all columns to numeric -->
-<!-- x <- do.call(cbind, x)  # Combine columns into a matrix -->
-<!-- y <- ifelse(breast_cancer_df$Class == "benign", 0, 1)  # Convert labels to 0 (benign) and 1 (malignant) -->
-<!-- y <- to_categorical(y, 2)  # One-hot encode labels for binary classification -->
 
-<!-- # Standardize features -->
-<!-- x <- scale(x) -->
+n<- nrow(brca_data)
 
-<!-- # Split data into training and testing sets -->
-<!-- set.seed(123) -->
-<!-- indices <- sample(1:nrow(x), nrow(x) * 0.8)  # 80% for training, 20% for testing -->
-<!-- x_train <- x[indices, ] -->
-<!-- y_train <- y[indices, ] -->
-<!-- x_test <- x[-indices, ] -->
-<!-- y_test <- y[-indices, ] -->
+ntest<- trunc(n/3)
+testid<- sample(1:n, ntest)
+```
 
-<!-- # Define the neural network model -->
-<!-- model <- keras_model_sequential() %>% -->
-<!--   layer_dense(units = 256, activation = "relu", input_shape = ncol(x_train)) %>% -->
-<!--   layer_dropout(rate = 0.4) %>% -->
-<!--   layer_dense(units = 128, activation = "relu") %>% -->
-<!--   layer_dropout(rate = 0.3) %>% -->
-<!--   layer_dense(units = 2, activation = "softmax") -->
+```{r}
+mod.fit<- lm(x.radius_mean ~., data = brca_data[-testid , ])
+mod.fit
+```
 
-<!-- # Compile the model -->
-<!-- model %>% compile( -->
-<!--   loss = "categorical_crossentropy", -->
-<!--   optimizer = optimizer_rmsprop(), -->
-<!--   metrics = c("accuracy") -->
-<!-- ) -->
+```{r}
+mod.pred <- predict(mod.fit,  brca_data[testid , ])
 
-<!-- # Train the model -->
-<!-- history <- model %>% fit( -->
-<!--   x_train, y_train, epochs = 30, batch_size = 128, -->
-<!--   validation_split = 0.2 -->
-<!-- ) -->
+with(brca_data[testid , ], mean(abs(mod.pred- x.radius_mean)))
+```
 
-<!-- # Plot training history -->
-<!-- plot(history, smooth = FALSE) -->
+```{r}
+x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))
+y <- brca_data$x.radius_mean
 
-<!-- # Evaluate model on test data -->
-<!-- accuracy <- function(pred, truth) { -->
-<!--   pred_class <- max.col(pred) - 1  # Convert one-hot encoded predictions to class labels -->
-<!--   truth_class <- max.col(truth) - 1  # Convert one-hot encoded truth to class labels -->
-<!--   mean(pred_class == truth_class) -->
-<!-- } -->
+cvfit<- cv.glmnet(x[-testid, ], y[-testid], type.measure = "mae")
+cvpred<- predict(cvfit, x[testid, ], s = "lambda.min")
+mean(abs(y[testid]- cvpred))
 
-<!-- model %>% evaluate(x_test, y_test) -->
+```
 
-<!-- ``` -->
+```{r}
+modnn <- keras_model_sequential() %>%
+ layer_dense(units = 50, activation = "relu",
+input_shape = ncol(x)) %>%
+ layer_dropout(rate = 0.4) %>%
+ layer_dense(units = 1)
+
+x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))
+x <- scale(model.matrix( x.radius_mean ~.-1, data = brca_data))%>% scale()
+
+
+modnn %>% compile(loss = "mse",
+                  optimizer = optimizer_rmsprop(),
+                  metrics = list("mean_absolute_error")
+                  )
+```
+
+$$g(z) = $$
+
+```{r}
+history <- modnn %>% fit(
+  x[-testid , ], y[-testid], epochs = 20, batch_size = 32,
+  validation_data = list(x[testid , ], y[testid])
+            )
+```
+
+```{r}
+plot(history)
+```
+
+```{r}
+npred <- predict(modnn , x[testid , ])
+mean(abs(y[testid] - npred))
+```
 
 ```{r}
 # Load datasets
@@ -310,9 +338,6 @@ model %>% compile(
   metrics = c("accuracy")
 )
 
-model
-
-
 # Train the model
 history <- model %>% fit(
   train_images, train_labels, 
@@ -320,15 +345,16 @@ history <- model %>% fit(
   validation_split = 0.2
 )
 
-# Plot training history
-plot(history, smooth = FALSE)
-
 # Evaluate model on test data
 accuracy <- function(pred, truth) {
   mean(drop(as.numeric(pred)) == drop(truth))
 }
+
 test_accuracy <- model %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
 test_accuracy
-
 ```
 
+```{r}
+# Plot training history
+plot(history, smooth = TRUE)
+```
