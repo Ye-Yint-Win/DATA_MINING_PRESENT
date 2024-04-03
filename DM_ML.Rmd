@@ -1,0 +1,361 @@
+---
+title: "DL_ye"
+author: "Ye"
+date: "2024-03-26"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Linear Regression and Data Manipulation
+library(ISLR2)
+library(MASS)
+library(caret)
+library(dslabs)
+library(mlbench)
+library(data.table)
+
+# Neural Network Modeling
+library(keras)
+library(tensorflow)
+library(reticulate)
+
+# Image Classification with MNIST
+library(mnist)
+library(ggplot2)
+library(tidyverse)
+library(glmnet)
+```
+
+Let's start by preparing the data by splitting with testid
+
+```{r}
+# Remove rows with missing values from the dataset
+Gitters <- na.omit(Hitters)
+
+n <- nrow(Gitters)
+set.seed(13)
+ntest <- n/3
+
+# Randomly sample row indices to create the test dataset
+testid <- sample(1:n, ntest)
+```
+
+Fitting the model into a linear model
+
+```{r}
+lfit <- lm(Salary ~ ., data = Gitters[-testid , ])
+
+#Prediction
+lpred <- predict(lfit, Gitters[testid , ])
+
+#MEan Absolute Prediction error between train and test data.
+with(Gitters[testid , ], mean(abs(lpred - Salary)))
+```
+
+Scaling the Response Varaible and create the response variable This
+function scale() automatically converts factors to dummy variables. The
+scale() function standardizes the matrix so each column has mean zero
+and variance one.
+
+Cross-validated lasso regression model using cv.glmnet Getting MAE from
+lasso regression model
+
+```{r}
+#Scaling the predictors 
+x <- scale(model.matrix(Salary ~ . - 1, data = Gitters))
+y <- Gitters$Salary
+
+#Fitting into Lasso regression
+cvfit <- cv.glmnet(x[-testid , ], y[-testid],type.measure = "mae")
+
+#Prediction
+cpred <- predict(cvfit , x[testid , ])
+
+#MAE
+mean(abs(y[testid] - cpred))
+```
+
+## Single Layer Neural Network
+
+ReLU model(Rectified Linear Model) $$
+f(x) = \begin{cases} 
+0 & \text{if } x \leq 0 \\
+x & \text{if } x > 0 
+\end{cases}
+$$\$
+
+To fit the neural network, we have to set up a model structure that
+describe the network.
+
+We now return to our neural network. The object modnn has a single
+hidden layer with 50 hidden units, and a ReLU activation function. It
+then has a dropout layer, in which a random 40% of the 50 activations
+from the previous layer are set to zero during each iteration of the
+stochastic gradient descent algorithm. Finally, the output layer has
+just one unit with no activation function, indicating that the model
+provides a single quantitative output
+
+keras_model_sequential(): This function initializes an empty sequential
+model, which is a linear stack of layers. layer_dense: This function
+adds a fully connected (dense) layer to the neural network.
+
+layer_dropout : This function adds a dropout layer to the neural
+network. Dropout is a regularization technique used to prevent
+overfitting by randomly setting a fraction of input units to zero during
+training. layer_dense: output layer for linear regression. It connects
+the layer with a single neuron, which is typical for linear regression.
+
+```{r}
+modnn <- keras_model_sequential() %>%
+  layer_dense(units = 50, activation = "sigmoid",input_shape = ncol(x)) %>%
+  layer_dropout(rate = 0.4) %>%
+  layer_dense(units = 1)
+
+
+x <- model.matrix(Salary ~ . - 1, data = Gitters) %>% scale()
+modnn
+```
+
+Compile(): this sets up the neural network model to use MSE as loss
+funciton, RMSprop as optimizer annd MSE as metric for performance.
+
+Optimizer is an optimization algorithm that adjust the learning rate for
+each parameter based on the average fo recent gradients.
+
+Then, we fit the model into a plot.
+
+Epochs: the number of epochs or iterations over the entire dataset
+during the training. batch_size: the algorithm randomly select this
+amount of training observations for the computation of the gradient(how
+much we need to adjust).
+
+```{r}
+modnn %>% compile(
+  loss = "mse",
+  optimizer = optimizer_rmsprop(),
+  metrics = list("mean_absolute_error")
+)
+
+history <- modnn %>% 
+  fit(
+    x[-testid , ], y[-testid], epochs = 400, batch_size = 32, validation_data = list(x[testid , ], y[testid])
+    )
+```
+
+Now, we predict the values based on the model and get the MAE of the
+model. Then, We plot.
+
+```{r}
+npred <- predict(modnn , x[testid , ])
+mean(abs(y[testid] - npred))
+
+plot(history)
+```
+
+## Multi-Layer Neural Networks
+
+We'll use MNIST dataset provided in the textbook.
+
+This dataset is 60,000 images in the training data and 10,000 in the
+test data. The images are 28×28, and stored as a three-dimensional
+array, so we need to reshape them into a matrix.
+
+```{r}
+mnist_file <- "/Users/yeyintwin/Desktop/DM_assign/mnist.npz"
+
+# Load the MNIST dataset from the local file
+mnist <- keras::dataset_mnist(path = mnist_file)
+
+#train set for images 
+train_images <- mnist$train$x
+
+#train set for label 
+train_labels <- mnist$train$y
+
+
+#test set for images and label
+test_images <- mnist$test$x
+test_labels <- mnist$test$y
+
+
+dim(train_images)
+dim(test_images)
+```
+
+After array reshaping, we will put the images data into 8-bit greyscale
+values from 0 to 255 (256).
+
+```{r}
+train_images <- array_reshape(train_images, c(nrow(train_images), 784))
+test_images <- array_reshape(test_images, c(nrow(test_images), 784))
+train_labels <- to_categorical(train_labels, 10)
+test_labels <- to_categorical(test_labels, 10)
+
+train_images <- train_images / 255
+test_images <- test_images / 255
+```
+
+Model for multi-layer neural networks using relu twice, and output layer
+with activation function of "softmax". The (1st) first layer goes from
+28 × 28 = 784 input units to a hidden layer of 256 units, followed with
+dropout layer to perform regularization. This will have 128 hidden units
+into the second (2nd) layer, followed with dropout layer. The output
+layer for this model will have "soft-max" activation for 10-class
+classification.
+
+```{r}
+modelnn <- keras_model_sequential() %>%
+  layer_dense(units = 256, activation = "relu", input_shape = c(784)) %>%
+  layer_dropout(rate = 0.4) %>%
+  
+  layer_dense(units = 128, activation = "relu") %>%
+  layer_dropout(rate = 0.3) %>%
+  
+  layer_dense(units = 10, activation = "softmax")
+
+summary(modelnn)
+```
+
+The final step is to supply the training data and fit the model. The
+model will itereate 20 times, and it processes 128 samples at each time.
+0.2 of validation_split is so that 20% is used for validation, while the
+rest, 80%, is for training. Categorical Crossentropy is well-suited for
+multi-class classification.
+
+```{r}
+modelnn %>% compile(
+  loss = "categorical_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy")
+)
+
+system.time(
+  history_nn <- modelnn %>%
+    fit(train_images, train_labels, epochs = 20, batch_size = 128,
+        validation_split = 0.2)
+)
+plot(history_nn , smooth = TRUE)
+```
+
+accuracy() that compares predicted and true class labels, and this
+computes the correctly predicted labels out of the total number of
+labels. k_argmax(): convert the predictions into class labels.
+
+```{r}
+accuracy <- function(pred, truth) {
+  mean(drop(as.numeric(pred)) == drop(truth))
+}
+modelnn %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
+```
+
+Now, we'll model with a single layer to get a comparable model to the
+multi-layer model above.
+
+Softmax Function:
+$softmax(f_m(X)) = Pr(Y = m | X) = \frac{e^{Z_m}}{\sum_{l=0}^{k} e^{z_l}}$
+
+For our model specifically
+$softmax(f_m(X)) = Pr(Y = m | X) = \frac{e^{Z_m}}{\sum_{l=0}^{9} e^{z_l}}$
+
+```{r}
+modellr <- keras_model_sequential() %>%
+  layer_dense(input_shape = 784, units = 10,
+              activation = "softmax")
+summary(modellr)
+
+
+modellr %>% compile(loss = "categorical_crossentropy",
+                    optimizer = optimizer_rmsprop(), 
+                    metrics = c("accuracy"))
+
+history_r<- modellr %>% fit(train_images, train_labels, epochs = 20,
+                batch_size = 128, validation_split = 0.2)
+```
+
+Accuracy and Plot for Comparing model
+
+```{r}
+modellr %>% predict(test_images) %>% k_argmax() %>% accuracy(test_labels)
+plot(history_r, smooth = TRUE)
+```
+
+##### HomeWork: 
+
+Here's a BRCA dataset that is prepared for regression with single-layer
+neural network.
+
+```{r}
+data(brca)
+predictors = data.frame(brca$x)
+brca_data = data.frame(x = predictors, 
+                       y = fct_relevel(brca$y, c("M","B"))) 
+set.seed(42)
+
+
+n<- nrow(brca_data)
+
+ntest<- trunc(n/3)
+testid<- sample(1:n, ntest)
+```
+
+1.  Fit a linear model to predict \`x.radius_mean\` and get MAE for the
+    model
+
+```{r}
+
+```
+
+2.  Make a \`glmnet\` model and get MAE for the model
+
+```{r}
+
+```
+
+3.  Make a single-layer neural network with an activation layer of your
+    choice, a dropout layer and output layer.
+
+    Hint: don't forget scale the inputs.
+
+    ```{r}
+
+    ```
+
+4.  Fit the model and create a plot.
+
+```{r}
+
+```
+
+5.  Calculate the MAE for this model.
+
+How does this model compare to the previous two models?
+
+```{r}
+
+```
+
+Classification/Mutli-Layer Neural Network Homework
+
+```{r}
+# Load datasets
+train <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/train.csv")
+test <- read.csv("https://raw.githubusercontent.com/ben519/MLPB/master/Problems/Classify%20Images%20of%20Stairs/_Data/test.csv")
+
+# Reshape datasets
+train_images <- array_reshape(as.matrix(train[, c("R1C1", "R1C2", "R2C1", "R2C2")]), c(nrow(train), 4))
+test_images <- array_reshape(as.matrix(test[, c("R1C1", "R1C2", "R2C1", "R2C2")]), c(nrow(test), 4))
+dim(train_images)
+dim(test_images)
+# Preprocess datasets
+train_images <- train_images / 255
+test_images <- test_images / 255
+```
+
+```{r}
+
+```
