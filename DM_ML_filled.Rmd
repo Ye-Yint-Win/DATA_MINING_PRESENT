@@ -11,20 +11,16 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# Linear Regression and Data Manipulation
+
 library(ISLR2)
 library(MASS)
 library(caret)
 library(dslabs)
 library(mlbench)
 library(data.table)
-
-# Neural Network Modeling
 library(keras)
 library(tensorflow)
 library(reticulate)
-
-# Image Classification with MNIST
 library(mnist)
 library(ggplot2)
 library(tidyverse)
